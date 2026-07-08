@@ -1,7 +1,7 @@
-# Notes
+# Note
 
-A zero dependency POSIX compliant shell script that makes it really simple to
-manage your text notes.
+A zero dependency PowerShell script that makes it really simple to manage your
+text notes on Windows, with no extra installation or configuration.
 
 Instead of trying to impose a whole bunch of rules and syntax requirements,
 this tool does its best to get out of your way.
@@ -11,23 +11,10 @@ can save whatever text you want into a file. This could come from typing a
 sentence out, pasting something from your clipboard or saving the output of a
 program.
 
-## Demo Video
-
-[![Demo
-video](https://nickjanetakis.com/assets/blog/cards/organize-your-text-based-notes-from-the-command-line-with-this-script-53667299e8d44dbc6091a80a477dc540e201da4aa47ba974f630da4690500444.jpg)](https://nickjanetakis.com/blog/organize-your-text-based-notes-from-the-command-line-with-this-script)
-
-#### Updates to the notes script since this video
-
-- `v0.2.0` scopes the notes files [per month instead of per
-  day](https://github.com/nickjj/notes/commit/4693109f27dc15da6626e3afbba53730810df026).
-  This differs from what's in the video at the 4:00 mark.
-- `v0.1.0` matches exactly what's in this video.
-
 ## Design Goals and Philosophy
 
-I've been keeping track of my notes in plain text files since 2001. I always
-felt like when it comes to jotting down notes it was always best to do
-everything possible to keep friction low.
+When it comes to jotting down notes it's always best to do everything possible
+to keep friction low.
 
 That means not worrying about specific file types, formatting, tagging,
 check boxes, syntax rules and a bunch of other things that delay you from
@@ -35,8 +22,8 @@ getting something out of your head and into a document.
 
 ### Text is amazing for notes because:
 
-- You can use `grep` and friends to search through it later
-- Even with notes dating back from 2001, I'm only using 1.5mb of disk space
+- You can use `Select-String` (or `grep` if you have it) to search through it later
+- Even with notes dating back years, you're only using a tiny amount of disk space
 - It's really easy to back up and sync to other devices using Drop Box or similar tools
 
 Since it's unstructured text you can use this tool for whatever type of note
@@ -44,25 +31,21 @@ taking you want. You can keep track of general thoughts, create a diary or make
 plan files similar to what John Carmack did [for a number of
 years](https://github.com/ESWAT/john-carmack-plan-archive).
 
-I personally use it as a scattered brain dump. Even with things being very
-unstructured (and even untagged) I can usually `grep` out anything I want
-within a few seconds.
-
 ### Your notes are organized by auto-dated files
 
-Let's say it's December 25th, 2019. If you were to run `notes hello world` it
+Let's say it's December 25th, 2019. If you were to run `note hello world` it
 would create a `2019-12.txt` file in your `NOTES_DIRECTORY` (this is
 something you can configure). It would then append `hello world` to the end of
 the file.
 
-If you run `notes something else` on the next day it will still append to the
+If you run `note something else` on the next day it will still append to the
 same file and continue appending to that file until the next months hits. For
-example, on January 1st 2020 any `notes` commands will append to a
+example, on January 1st 2020 any `note` commands will append to a
 `2020-01.txt` file.
 
 There's other things you can do such as piping input to it, or running the
-script without any arguments to open the file in your configured `EDITOR` but
-let's first go over installing it before we get to that.
+script without any arguments to open the file in your configured `$env:EDITOR`
+but let's first go over installing it before we get to that.
 
 ### What is this script not good for?
 
@@ -75,90 +58,94 @@ bunch of isolated date formatted files that was mixed in with everything else.
 
 In those cases, I recommend you make a new script called `book` which basically
 does what this script does except it always dumps everything to 1 specific file
-of your choosing which isn't dated. That's what I do to help plan my
-[video courses](https://nickjanetakis.com/courses/).
+of your choosing which isn't dated.
 
 ## Installation
 
-*If you're using [my dotfiles](https://github.com/nickjj/dotfiles), it comes
-pre-installed by default!*
+This is a pure PowerShell script, so it runs on Windows out of the box with no
+extra tools, WSL, or Git Bash needed.
 
-Copy / paste the line below, or if you don't like this pattern of installing
-scripts then feel free to run things manually.
+### 1. Save the script
 
-### 1 liner to get `notes` downloaded to `/usr/local/bin`:
+Save `note.ps1` somewhere permanent, for example:
 
-```sh
-sudo curl \
-  -L https://raw.githubusercontent.com/nickjj/notes/v0.3.1/notes \
-  -o /usr/local/bin/notes && sudo chmod +x /usr/local/bin/notes
+```
+C:\Users\<you>\scripts\note.ps1
 ```
 
-That will download the latest release. If you want to download the bleeding
-edge version you can replace the *version number* with *master* in the above
-command.
+### 2. Add a `note` command to your profile
 
-You can also choose to replace `master` with a specific [release
-tag](https://github.com/nickjj/notes/tags) if you want to grab a specific
-version.
+Open your PowerShell profile:
 
-There's no fancy `git clone` instructions because you may end up modifying at
-least 1 line of the script. Plus since the script is so simple, this repo is
-likely not going to change and if it does you will be able to `diff` it without
-any issues.
+```powershell
+notepad $PROFILE
+```
+
+Add this line (adjust the path to wherever you saved the script):
+
+```powershell
+function note { & "C:\Users\<you>\scripts\note.ps1" @args }
+```
+
+Save the file and restart your terminal (or run `. $PROFILE` to reload it).
+
+### 3. Allow the script to run (one time only)
+
+If you get an error saying scripts are disabled, run this once:
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+```
 
 ### Configuration
 
-By default it will use `${HOME}/notes` as your notes directory and if that
+By default it will use `$HOME\notes` as your notes directory and if that
 directory doesn't exist beforehand, this script will allow you to create it
 with a `y/n` prompt when you first run the program.
 
-You can also customize your notes path in 1 of 2 ways:
+You can customize your notes path by setting an environment variable in your
+PowerShell profile:
 
-1. Put `export NOTES_DIRECTORY="/tmp/example"` in your `~/.profile` or equivalent
-file (`/tmp/example` would be your notes path)
-2. Directly edit the `notes` script and replace `${HOME}/notes` with `/tmp/example`
-in the `NOTES_DIRECTORY` variable
+```powershell
+$env:NOTES_DIRECTORY = "D:\example"
+```
 
 Also, if you want this script to open your notes in your code editor you'll
-want to make sure you have your `EDITOR` defined in your `~/.profile` too. This
-is a Unix standard. For example, mine looks like `export EDITOR="vim"`.
+want to set `$env:EDITOR` in your profile too:
 
-*If you change your `~/.profile`, don't forget to log out / login.*
+```powershell
+$env:EDITOR = "nvim"
+```
+
+If `$env:EDITOR` isn't set, it falls back to opening the file in Notepad.
+
+*If you change your profile, don't forget to restart your terminal.*
 
 ## Usage Examples
 
 There's 3 ways of using this script:
 
-- `notes something you want to jot down`
+- `note something you want to jot down`
   - Appends whatever arguments you add as text into the dated file
 
-- `xclip -o | notes`
+- `Get-Clipboard | note`
   - Pipes and appends anything (in this case your clipboard's contents) into the dated file
 
-- `notes`
-  - Opens the dated file in your configured `EDITOR`
+- `note`
+  - Opens the dated file in your configured `$env:EDITOR` (or Notepad)
 
 That's really all there is to it. With the above 3 ways of adding notes you'll
 find yourself adding all sorts of different types of notes with very little
-friction. I encourage you to check out [just how short the source
-code](https://github.com/nickjj/notes/blob/master/notes) is.
+friction.
 
-If you wanted to go all out, you could even create custom key binds in your
-code editor that would take the selected text and append it to your notes by
-running one of the above commands. Since everything is text you have a lot of
-flexibility!
+You also have the power of PowerShell at your fingertips to manipulate these
+files however you see fit. For example you can run `Get-Content 2019-*.txt |
+Set-Content 2019.txt` to create a yearly file.
 
-Also, you have the power of the command line at your finger tips to manipulate
-these files however you see fit. For example you can run `cat 2019-*.txt >
-2019.txt` to create a yearly file.
+## Credits
 
-## About the Author
-
-I'm a self taught developer and have been freelancing for the last ~20 years.
-You can read about everything I've learned along the way on my site at
-[https://nickjanetakis.com](https://nickjanetakis.com/). There's hundreds of
-[blog posts](https://nickjanetakis.com/blog/) and a couple of [video
-courses](https://nickjanetakis.com/courses/) on web development and deployment
-topics. I also have a [podcast](https://runninginproduction.com) where I talk
-to folks about running web apps in production.
+This is a PowerShell port of [nickjj/notes](https://github.com/nickjj/notes),
+a POSIX shell script originally written by [Nick
+Janetakis](https://nickjanetakis.com/). All credit for the original design and
+philosophy goes to him — this version just adapts it to run natively on
+Windows.

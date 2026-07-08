@@ -1,0 +1,69 @@
+<#
+.SYNOPSIS
+    Create a dated text file at a specific location and append text to it.
+
+.DESCRIPTION
+    Usage:
+      notes something you want to jot down     (appends that text to the file)
+      "clip text" | notes                       (appends piped input to the file)
+      Get-Clipboard | notes                     (appends your clipboard to the file)
+      notes                                     (opens the file in your editor)
+
+    Produces:
+      YYYY-MM.txt in your $env:NOTES_DIRECTORY (defaults to $HOME\notes)
+#>
+
+param(
+    [Parameter(ValueFromRemainingArguments = $true)]
+    [string[]]$Args
+)
+
+$ErrorActionPreference = "Stop"
+
+if ($Args.Count -gt 0 -and ($Args[0] -in @('-v', '--version', 'version'))) {
+    Write-Output "0.3.1"
+    exit
+}
+
+$NotesDirectory = if ($env:NOTES_DIRECTORY) { $env:NOTES_DIRECTORY } else { Join-Path $HOME "notes" }
+$NotesEditor = $env:EDITOR
+$NotesFile = (Get-Date -Format "yyyy-MM") + ".txt"
+$NotesPath = Join-Path $NotesDirectory $NotesFile
+
+if (-not (Test-Path -Path $NotesDirectory -PathType Container)) {
+    while ($true) {
+        $yn = Read-Host "$NotesDirectory does not exist, do you want to create it? (y/n)"
+        switch -Regex ($yn) {
+            '^[Yy]' {
+                New-Item -ItemType Directory -Path $NotesDirectory -Force | Out-Null
+                break
+            }
+            '^[Nn]' { exit }
+            default { Write-Output "Please answer y or n`n"; continue }
+        }
+        break
+    }
+}
+
+# Detect whether input is being piped in (like `[ -p "/dev/stdin" ]` in sh)
+$HasPipedInput = [Console]::IsInputRedirected
+
+if ($Args.Count -eq 0) {
+    if ($HasPipedInput) {
+        $piped = [Console]::In.ReadToEnd()
+        Add-Content -Path $NotesPath -Value ($piped + "`n`n") -NoNewline
+    }
+    else {
+        if ($NotesEditor) {
+            & $NotesEditor $NotesPath
+        }
+        else {
+            # Fall back to notepad if $env:EDITOR isn't set
+            notepad $NotesPath
+        }
+    }
+}
+else {
+    $text = $Args -join " "
+    Add-Content -Path $NotesPath -Value ($text + "`n`n") -NoNewline
+}

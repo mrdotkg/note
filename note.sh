@@ -7,13 +7,19 @@
 #   note                                  (opens today's file in your editor)
 #
 # Produces:
-#   YYYY-MM-DD.txt in $NOTE_DIR (defaults to the current directory)
+#   YYYY-MM-DD[.ext] in $NOTE_DIR (defaults to the current directory)
+#   Extension comes from $NOTE_EXT (e.g. "txt" or "md"); unset = no extension.
 set -o errexit
 
 NOTE_DIR="${NOTE_DIR:-$(pwd)}"
 mkdir -p "${NOTE_DIR}"
 
-NOTE_PATH="${NOTE_DIR}/$(date +%Y-%m-%d).txt"
+NOTE_EXT="${NOTE_EXT:-}"
+if [ -n "${NOTE_EXT}" ]; then
+  NOTE_EXT=".${NOTE_EXT#.}"
+fi
+
+NOTE_PATH="${NOTE_DIR}/$(date +%Y-%m-%d)${NOTE_EXT}"
 
 if [ ${#} -gt 0 ]; then
   printf "%s\n" "${*}" >> "${NOTE_PATH}"
